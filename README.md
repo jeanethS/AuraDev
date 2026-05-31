@@ -1,6 +1,6 @@
 # AuraDev — Platanus Build Night — Ciudad de México
 
-![AuraDev dashboard](auradev/dashboard/project-logo.png)
+![AuraDev dashboard](DashboardExample.png)
 
 **Ambient music engine that adapts to your developer cognitive state in real-time.**
 
@@ -8,13 +8,9 @@ AuraDev samples your coding behavior every 30 seconds, uses Claude AI to classif
 
 Hacker: [Jeaneth Sarahi Hernandez Rios](https://github.com/jeanethS) ([@cosmicctxt](https://x.com/cosmicctxt))
 
-### Terminal dashboard
+### Terminal
 
-![AuraDev terminal dashboard](../terminal.png)
-
-### Web dashboard
-
-![AuraDev web dashboard](DashboardExample.png)
+![AuraDev terminal dashboard](terminal.png)
 
 ---
 
