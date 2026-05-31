@@ -172,7 +172,10 @@
 
   <aside class="hidden md:flex flex-col gap-gutter p-gutter bg-surface-container-low h-full w-64 border-r-2 border-primary-container shrink-0 z-40">
     <div class="flex flex-col gap-unit mb-margin-desktop">
-      <div class="font-headline-lg text-headline-lg text-primary tracking-tighter uppercase leading-none">AURADEV</div>
+      <div class="flex items-center gap-3">
+        <img src="project-logo.png" alt="AURADEV logo" class="w-9 h-9 object-contain shrink-0" />
+        <div class="font-headline-lg text-headline-lg text-primary tracking-tighter uppercase leading-none">AURADEV</div>
+      </div>
       <div id="sidebar-mode" class="text-on-surface-variant font-label-caps text-label-caps mt-1 flex items-center gap-2">
         <span id="sidebar-dot" class="w-2 h-2 bg-outline rounded-full" aria-hidden="true"></span>
         <span id="sidebar-status">Connecting to API</span>
@@ -643,7 +646,7 @@
         timestamp: cycle.timestamp,
       }, null, 2);
     }
-
+  
     function updateFocusMetrics(cycles, sessionMeta) {
       const { pct } = computePercentages(cycles);
       $("focus-trend-value").textContent = cycles.length ? `${pct.flow}%` : "—";
@@ -889,31 +892,6 @@
       }).join("");
     }
 
-    const CHAR_BITMAPS = {
-      '~': [[0,0,0,0,0],[0,1,0,1,0],[1,0,1,0,1],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]],
-      '[': [[1,1,1,0,0],[1,0,0,0,0],[1,0,0,0,0],[1,0,0,0,0],[1,0,0,0,0],[1,0,0,0,0],[1,1,1,0,0]],
-      'O': [[0,1,1,1,0],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[0,1,1,1,0]],
-      ']': [[0,0,1,1,1],[0,0,0,0,1],[0,0,0,0,1],[0,0,0,0,1],[0,0,0,0,1],[0,0,0,0,1],[0,0,1,1,1]],
-      '?': [[0,1,1,1,0],[1,0,0,0,1],[0,0,0,1,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,0,0,0],[0,0,1,0,0]],
-      ':': [[0,0,0,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,0,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,0,0,0]],
-      '*': [[0,0,1,0,0],[1,0,1,0,1],[0,1,1,1,0],[1,1,1,1,1],[0,1,1,1,0],[1,0,1,0,1],[0,0,1,0,0]],
-      '(': [[0,0,1,0,0],[0,1,0,0,0],[1,0,0,0,0],[1,0,0,0,0],[1,0,0,0,0],[0,1,0,0,0],[0,0,1,0,0]],
-      'o': [[0,0,0,0,0],[0,1,1,1,0],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[0,1,1,1,0],[0,0,0,0,0]],
-      '_': [[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[1,1,1,1,1],[0,0,0,0,0]],
-      ')': [[0,0,1,0,0],[0,0,0,1,0],[0,0,0,0,1],[0,0,0,0,1],[0,0,0,0,1],[0,0,0,1,0],[0,0,1,0,0]],
-      '<': [[0,0,0,1,0],[0,0,1,0,0],[0,1,0,0,0],[1,0,0,0,0],[0,1,0,0,0],[0,0,1,0,0],[0,0,0,1,0]],
-      '=': [[0,0,0,0,0],[1,1,1,1,1],[0,0,0,0,0],[0,0,0,0,0],[1,1,1,1,1],[0,0,0,0,0],[0,0,0,0,0]],
-      '>': [[0,1,0,0,0],[0,0,1,0,0],[0,0,0,1,0],[0,0,0,0,1],[0,0,0,1,0],[0,0,1,0,0],[0,1,0,0,0]],
-    };
-
-    const STATE_ICONS_CHARS = {
-      flow: ['~','[','O',']','~'],
-      stuck: ['[','?','?','?',']'],
-      debugging: ['[',':','*',':',']'],
-      reviewing: ['(','o','_','o',')'],
-      context_switching: ['<','=','=','>'],
-    };
-
     class PixelCanvas {
       constructor(canvas) {
         this.canvas = canvas;
@@ -948,17 +926,6 @@
         return map[code] || "transparent";
       }
 
-      codeToIconColor(code) {
-        const map = {
-          1: '#3d5499',
-          2: '#993333',
-          3: '#7a2e7c',
-          4: '#2d4a8c',
-          5: '#3d2e5e',
-        };
-        return map[code] || '#333';
-      }
-
       buildGrid() {
         this.grid = [];
         for (let i = 0; i < GRID_COLS; i++) {
@@ -980,69 +947,6 @@
             idx++;
           }
         }
-        this.buildIconOverlay();
-      }
-
-      buildIconOverlay() {
-        for (let i = 0; i < GRID_COLS; i++)
-          for (let j = 0; j < GRID_ROWS; j++)
-            this.grid[i][j].iconPixel = false;
-
-        const codeToState = { 1:'flow', 2:'stuck', 3:'reviewing', 4:'debugging', 5:'context_switching' };
-        const stateGroups = {};
-        for (let i = 0; i < GRID_COLS; i++) {
-          for (let j = 0; j < GRID_ROWS; j++) {
-            const code = this.grid[i][j].state;
-            if (code > 0) {
-              if (!stateGroups[code]) stateGroups[code] = { minI:i, maxI:i, minJ:j, maxJ:j };
-              else {
-                const g = stateGroups[code];
-                g.minI = Math.min(g.minI, i); g.maxI = Math.max(g.maxI, i);
-                g.minJ = Math.min(g.minJ, j); g.maxJ = Math.max(g.maxJ, j);
-              }
-            }
-          }
-        }
-
-        const CHAR_W = 5, CHAR_H = 7, GAP = 1;
-        for (const [codeStr, bounds] of Object.entries(stateGroups)) {
-          const code = Number(codeStr);
-          const stateName = codeToState[code];
-          const iconChars = STATE_ICONS_CHARS[stateName];
-          if (!iconChars) continue;
-
-          const totalIconW = iconChars.length * (CHAR_W + GAP) - GAP;
-          const regionW = bounds.maxI - bounds.minI + 1;
-          const regionH = bounds.maxJ - bounds.minJ + 1;
-          if (regionW < totalIconW || regionH < CHAR_H) continue;
-
-          const scale = Math.max(1, Math.min(Math.floor(regionW / totalIconW), Math.floor(regionH / CHAR_H)));
-          const scaledW = totalIconW * scale;
-          const scaledH = CHAR_H * scale;
-          const startI = bounds.minI + Math.floor((regionW - scaledW) / 2);
-          const startJ = bounds.minJ + Math.floor((regionH - scaledH) / 2);
-
-          for (let ci = 0; ci < iconChars.length; ci++) {
-            const bitmap = CHAR_BITMAPS[iconChars[ci]];
-            if (!bitmap) continue;
-            const charStartI = startI + ci * (CHAR_W + GAP) * scale;
-            for (let row = 0; row < CHAR_H; row++) {
-              for (let col = 0; col < CHAR_W; col++) {
-                if (bitmap[row][col]) {
-                  for (let sy = 0; sy < scale; sy++) {
-                    for (let sx = 0; sx < scale; sx++) {
-                      const gi = charStartI + col * scale + sx;
-                      const gj = startJ + row * scale + sy;
-                      if (gi >= 0 && gi < GRID_COLS && gj >= 0 && gj < GRID_ROWS) {
-                        this.grid[gi][gj].iconPixel = true;
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
       }
 
       resize() {
@@ -1060,27 +964,16 @@
         if (!this.ctx) return;
         const { ctx, grid, cellW, cellH } = this;
         ctx.clearRect(0, 0, this.width, this.height);
-        ctx.strokeStyle = "#e8dff0";
-        ctx.lineWidth = 0.5;
-        for (let i = 0; i <= GRID_COLS; i++) {
-          ctx.beginPath(); ctx.moveTo(i * cellW, 0); ctx.lineTo(i * cellW, this.height); ctx.stroke();
-        }
-        for (let j = 0; j <= GRID_ROWS; j++) {
-          ctx.beginPath(); ctx.moveTo(0, j * cellH); ctx.lineTo(this.width, j * cellH); ctx.stroke();
-        }
+
         this.time += 0.05;
         const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
         for (let i = 0; i < GRID_COLS; i++) {
           for (let j = 0; j < GRID_ROWS; j++) {
             const cell = grid[i][j];
             if (cell.state !== 0) {
-              if (cell.iconPixel) {
-                ctx.globalAlpha = reduceMotion ? 0.92 : 0.82 + 0.18 * Math.sin(this.time + cell.noiseOffset);
-                ctx.fillStyle = this.codeToIconColor(cell.state);
-              } else {
-                ctx.globalAlpha = reduceMotion ? 1 : 0.7 + 0.3 * Math.sin(this.time + cell.noiseOffset);
-                ctx.fillStyle = this.codeToColor(cell.state);
-              }
+              const opacity = reduceMotion ? 1 : 0.7 + 0.3 * Math.sin(this.time + cell.noiseOffset);
+              ctx.globalAlpha = opacity;
+              ctx.fillStyle = this.codeToColor(cell.state);
               ctx.fillRect(i * cellW + 1, j * cellH + 1, cellW - 2, cellH - 2);
             }
           }

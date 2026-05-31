@@ -1,5 +1,7 @@
 # AuraDev — Platanus Build Night — Ciudad de México
 
+![AuraDev dashboard](auradev/dashboard/project-logo.png)
+
 **Ambient music engine that adapts to your developer cognitive state in real-time.**
 
 AuraDev samples your coding behavior every 30 seconds, uses Claude AI to classify your cognitive state (flow, stuck, debugging, reviewing, context-switching), and generates matching ambient music via Google's Lyria API.

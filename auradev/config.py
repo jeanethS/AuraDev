@@ -27,7 +27,14 @@ LYRIA_PROJECT_ID = os.getenv("LYRIA_PROJECT_ID")
 GOOGLE_APPLICATION_CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 
 # Cloud sync URL - set to your Render deployment
-SYNC_URL = os.getenv("AURADEV_SYNC_URL", "https://auradev-y1bp.onrender.com/api/sync")
+SYNC_URL = os.getenv("AURADEV_SYNC_URL")
+
+_default_origins = "http://localhost:8765,http://localhost:3000"
+CORS_ORIGINS: list[str] = [
+    o.strip()
+    for o in os.getenv("CORS_ORIGINS", _default_origins).split(",")
+    if o.strip()
+]
 
 SAMPLE_INTERVAL = 30
 CROSSFADE_SECONDS = 3.0

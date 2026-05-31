@@ -95,7 +95,7 @@ python main.py --demo --drum-volume 0.7
 
 ```
 ╔══════════════════════════════════════════════════════════╗
-║        ♪    ∿  D E V A U R A  ∿    ♪                     ║
+║        ♪    ∿  A U R A D E V  ∿    ♪                     ║
 ║        Ambient Music Engine for Developers               ║
 ╚══════════════════════════════════════════════════════════╝
 
@@ -293,11 +293,6 @@ USER_ID=developer1
 - Both should use same `DB_MODE` and `USER_ID`
 - Check environment variables are set consistently
 - In isolated mode, each user_id creates a separate database file
-
-For complete multi-tenant documentation, see:
-- `docs/multi-tenant-database.md` - Architecture details
-- `docs/multi-tenant-quick-reference.md` - Quick start guide
-- `DEPLOYMENT.md` - Cloud hosting instructions
 
 ## Architecture
 

@@ -46,13 +46,25 @@ class SessionLogger:
         self.session_entries: List[Dict[str, Any]] = []
         self.session_start_time = time.time()
 
-        # ANSI color codes for terminal output
+        # ANSI truecolor template aligned with dashboard palette.
         self.state_colors = {
-            "flow": "\033[92m",              # Green
-            "stuck": "\033[91m",             # Red
-            "debugging": "\033[93m",         # Yellow
-            "reviewing": "\033[96m",         # Cyan
-            "context_switching": "\033[95m", # Magenta
+            "flow": self._ansi_hex("#b2c5ff"),
+            "stuck": self._ansi_hex("#ffdad6"),
+            "debugging": self._ansi_hex("#dae2ff"),
+            "reviewing": self._ansi_hex("#fbd7fd"),
+            "context_switching": self._ansi_hex("#e8dff0"),
+        }
+        self.primary_color = self._ansi_hex("#2c375c")
+        self.navy_color = self._ansi_hex("#434e74")
+        self.mauve_color = self._ansi_hex("#ae8fb1")
+        self.text_color = self._ansi_hex("#f7edff")
+        self.muted_color = self._ansi_hex("#bac5f2")
+        self.rule_color = self._ansi_hex("#434e74")
+        self.status_colors = {
+            "ok": self._ansi_hex("#b2c5ff"),
+            "warn": self._ansi_hex("#fbd7fd"),
+            "error": self._ansi_hex("#ffdad6"),
+            "offline": self._ansi_hex("#76767f"),
         }
         self.reset_color = "\033[0m"
         self.bold = "\033[1m"
@@ -80,15 +92,26 @@ class SessionLogger:
         """Print a fancy ASCII startup banner."""
         logo = (
             f"\n"
-            f"{self.bold}╔══════════════════════════════════════════════════════════╗{self.reset_color}\n"
-            f"{self.bold}║{self.reset_color}                                                          {self.bold}║{self.reset_color}\n"
-            f"{self.bold}║{self.reset_color}      ♪    ∿  A U R A D E V  ∿    ♪                       {self.bold}║{self.reset_color}\n"
-            f"{self.bold}║{self.reset_color}                                                          {self.bold}║{self.reset_color}\n"
-            f"{self.bold}║{self.reset_color}      Ambient Music Engine for Developers                 {self.bold}║{self.reset_color}\n"
-            f"{self.bold}║{self.reset_color}                                                          {self.bold}║{self.reset_color}\n"
-            f"{self.bold}╚══════════════════════════════════════════════════════════╝{self.reset_color}\n"
+            f"{self.primary_color}{self.bold}╔══════════════════════════════════════════════════════════╗{self.reset_color}\n"
+            f"{self.primary_color}{self.bold}║{self.reset_color}                                                          {self.primary_color}{self.bold}║{self.reset_color}\n"
+            f"{self.primary_color}{self.bold}║{self.reset_color}      {self.mauve_color}♪    ∿  A U R A D E V  ∿    ♪{self.reset_color}                       {self.primary_color}{self.bold}║{self.reset_color}\n"
+            f"{self.primary_color}{self.bold}║{self.reset_color}                                                          {self.primary_color}{self.bold}║{self.reset_color}\n"
+            f"{self.primary_color}{self.bold}║{self.reset_color}      {self.navy_color}Ambient Music Engine for Developers{self.reset_color}                 {self.primary_color}{self.bold}║{self.reset_color}\n"
+            f"{self.primary_color}{self.bold}║{self.reset_color}                                                          {self.primary_color}{self.bold}║{self.reset_color}\n"
+            f"{self.primary_color}{self.bold}╚══════════════════════════════════════════════════════════╝{self.reset_color}\n"
         )
         print(logo)
+
+    @staticmethod
+    def _ansi_hex(hex_color: str) -> str:
+        """Return a 24-bit ANSI foreground color sequence from #RRGGBB."""
+        cleaned = hex_color.lstrip("#")
+        if len(cleaned) != 6:
+            return ""
+        r = int(cleaned[0:2], 16)
+        g = int(cleaned[2:4], 16)
+        b = int(cleaned[4:6], 16)
+        return f"\033[38;2;{r};{g};{b}m"
 
     def _generate_waveform(self, state: str, width: int = 52) -> str:
         """Generate a pseudo-spectrum waveform based on cognitive state."""
@@ -130,6 +153,10 @@ class SessionLogger:
             return base + self.bold
         return base
 
+    def _rule(self, char: str = "═", width: int = 60) -> str:
+        """Render a palette-colored divider line."""
+        return f"{self.rule_color}{char * width}{self.reset_color}"
+
     def log_cycle(self, metrics: Dict[str, Any], classification: Dict[str, Any]):
         """Log a single collection cycle to terminal and file."""
         timestamp = datetime.now()
@@ -150,19 +177,50 @@ class SessionLogger:
         color = self._pulse_color(state, confidence)
         icon = self.state_icons.get(state, "◆")
 
-        print(f"\n{'═'*60}")
-        print(f" {icon}  {color}{state.upper()}{self.reset_color}  "
-              f"confidence: {color}{confidence:.0%}{self.reset_color}")
-        print(f" {' '*4}∿ {self._generate_waveform(state)} ∿")
-        print(f" {' '*4}→ {reason}")
-        print(f"{'─'*60}")
-        print(f"  WPM        {self._progress_bar(metrics['wpm'], 120)} {metrics['wpm']:>6.1f}")
-        print(f"  Backspace  {self._progress_bar(metrics['backspace_ratio'] * 100, 50)} {metrics['backspace_ratio']:>6.2f}")
-        print(f"  CPU        {self._progress_bar(metrics['cpu_percent'], 100)} {metrics['cpu_percent']:>6.1f}%")
-        print(f"  Idle       {self._progress_bar(metrics['idle_seconds'], 60)} {metrics['idle_seconds']:>6.1f}s")
-        print(f"  Switches   {self._progress_bar(metrics['window_switches'], 20)} {metrics['window_switches']:>6}")
-        print(f"  Window     {metrics['active_window'][:42]}")
-        print(f"{'═'*60}")
+        print(f"\n{self._rule('═')}")
+        print(
+            f" {self.mauve_color}{icon}{self.reset_color}  "
+            f"{color}{state.upper()}{self.reset_color}  "
+            f"{self.muted_color}confidence:{self.reset_color} "
+            f"{color}{confidence:.0%}{self.reset_color}"
+        )
+        print(
+            f" {' '*4}{self.muted_color}∿{self.reset_color} "
+            f"{self.navy_color}{self._generate_waveform(state)}{self.reset_color} "
+            f"{self.muted_color}∿{self.reset_color}"
+        )
+        print(f" {' '*4}{self.muted_color}→{self.reset_color} {self.text_color}{reason}{self.reset_color}")
+        print(self._rule("─"))
+        print(
+            f"  {self.primary_color}WPM{self.reset_color}        "
+            f"{self.navy_color}{self._progress_bar(metrics['wpm'], 120)}{self.reset_color} "
+            f"{self.text_color}{metrics['wpm']:>6.1f}{self.reset_color}"
+        )
+        print(
+            f"  {self.primary_color}Backspace{self.reset_color}  "
+            f"{self.navy_color}{self._progress_bar(metrics['backspace_ratio'] * 100, 50)}{self.reset_color} "
+            f"{self.text_color}{metrics['backspace_ratio']:>6.2f}{self.reset_color}"
+        )
+        print(
+            f"  {self.primary_color}CPU{self.reset_color}        "
+            f"{self.navy_color}{self._progress_bar(metrics['cpu_percent'], 100)}{self.reset_color} "
+            f"{self.text_color}{metrics['cpu_percent']:>6.1f}%{self.reset_color}"
+        )
+        print(
+            f"  {self.primary_color}Idle{self.reset_color}       "
+            f"{self.navy_color}{self._progress_bar(metrics['idle_seconds'], 60)}{self.reset_color} "
+            f"{self.text_color}{metrics['idle_seconds']:>6.1f}s{self.reset_color}"
+        )
+        print(
+            f"  {self.primary_color}Switches{self.reset_color}   "
+            f"{self.navy_color}{self._progress_bar(metrics['window_switches'], 20)}{self.reset_color} "
+            f"{self.text_color}{metrics['window_switches']:>6}{self.reset_color}"
+        )
+        print(
+            f"  {self.primary_color}Window{self.reset_color}     "
+            f"{self.text_color}{metrics['active_window'][:42]}{self.reset_color}"
+        )
+        print(self._rule("═"))
 
         # File logging (unchanged format)
         with open(LOG_FILE, "a", encoding="utf-8") as f:
@@ -181,7 +239,11 @@ class SessionLogger:
         try:
             save_cycle(self.session_id, metrics, classification, self.user_id)
         except Exception as e:
-            print(f"Warning: failed to save cycle to DB: {e}", file=sys.stderr)
+            print(
+                f"{self.status_colors['warn']}{self.bold}Warning:{self.reset_color} "
+                f"{self.text_color}failed to save cycle to DB: {e}{self.reset_color}",
+                file=sys.stderr,
+            )
 
         # Sync to cloud API
         self._sync_to_cloud(metrics, classification)
@@ -207,16 +269,22 @@ class SessionLogger:
             }
             resp = requests.post(SYNC_URL, json=payload, timeout=5)
             if resp.status_code == 200:
-                print(f"  {self.dim}☁ synced to cloud{self.reset_color}")
+                print(
+                    f"  {self.status_colors['ok']}☁ synced to cloud{self.reset_color} "
+                    f"{self.dim}{self.muted_color}(dashboard live){self.reset_color}"
+                )
             else:
-                print(f"  {self.dim}☁ sync failed: {resp.status_code}{self.reset_color}", file=sys.stderr)
+                print(
+                    f"  {self.status_colors['error']}☁ sync failed: {resp.status_code}{self.reset_color}",
+                    file=sys.stderr,
+                )
         except Exception as e:
-            print(f"  {self.dim}☁ sync error: {e}{self.reset_color}", file=sys.stderr)
+            print(f"  {self.status_colors['error']}☁ sync error: {e}{self.reset_color}", file=sys.stderr)
 
     def print_session_summary(self):
         """Print final session statistics and save to file."""
         if not self.session_entries:
-            print("No session data to summarize.")
+            print(f"{self.muted_color}No session data to summarize.{self.reset_color}")
             return
 
         session_duration = time.time() - self.session_start_time
@@ -238,13 +306,23 @@ class SessionLogger:
         longest_flow = max(flow_windows, key=len) if flow_windows else []
 
         # Format summary
-        print(f"\n{'╔' + '═'*58 + '╗'}")
-        print(f"{'║' + ' '*20 + 'SESSION SUMMARY' + ' '*23 + '║'}")
-        print(f"{'╠' + '═'*58 + '╣'}")
-        print(f"  Duration:    {timedelta(seconds=int(session_duration))}")
-        print(f"  Total cycles: {total_cycles}")
-        print(f"{'─'*60}")
-        print("  State Distribution:")
+        print(f"\n{self.rule_color}{'╔' + '═'*58 + '╗'}{self.reset_color}")
+        print(
+            f"{self.rule_color}║{self.reset_color}"
+            f"{self.primary_color}{self.bold}{' '*20 + 'SESSION SUMMARY' + ' '*23}{self.reset_color}"
+            f"{self.rule_color}║{self.reset_color}"
+        )
+        print(f"{self.rule_color}{'╠' + '═'*58 + '╣'}{self.reset_color}")
+        print(
+            f"  {self.primary_color}Duration:{self.reset_color}    "
+            f"{self.text_color}{timedelta(seconds=int(session_duration))}{self.reset_color}"
+        )
+        print(
+            f"  {self.primary_color}Total cycles:{self.reset_color} "
+            f"{self.text_color}{total_cycles}{self.reset_color}"
+        )
+        print(self._rule("─"))
+        print(f"  {self.muted_color}State Distribution:{self.reset_color}")
 
         for state in ["flow", "stuck", "debugging", "reviewing", "context_switching"]:
             if state in state_percentages:
@@ -257,10 +335,13 @@ class SessionLogger:
         if longest_flow:
             flow_start = longest_flow[0]["timestamp"].strftime('%H:%M:%S')
             flow_duration = len(longest_flow) * 30  # 30 second intervals
-            print(f"{'─'*60}")
-            print(f"  ✦ Longest Flow Window: {flow_duration}s starting at {flow_start}")
+            print(self._rule("─"))
+            print(
+                f"  {self.mauve_color}✦ Longest Flow Window:{self.reset_color} "
+                f"{self.text_color}{flow_duration}s starting at {flow_start}{self.reset_color}"
+            )
 
-        print(f"{'╚' + '═'*58 + '╝'}")
+        print(f"{self.rule_color}{'╚' + '═'*58 + '╝'}{self.reset_color}")
 
         # Save summary to file
         with open(LOG_FILE, "a", encoding="utf-8") as f:

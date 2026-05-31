@@ -9,10 +9,10 @@ echo "This demo shows how two users can run DevAura"
 echo "simultaneously with isolated data storage."
 echo ""
 
-# Colors
-GREEN='\033[0;32m'
-BLUE='\033[0;34m'
-YELLOW='\033[1;33m'
+# Colors (aligned with dashboard palette)
+FLOW='\033[38;2;178;197;255m'
+DEBUG='\033[38;2;218;226;255m'
+ACCENT='\033[38;2;251;215;253m'
 NC='\033[0m' # No Color
 
 # Check if in correct directory
@@ -36,7 +36,7 @@ cleanup() {
 trap cleanup EXIT
 
 # User 1: Alice
-echo -e "${GREEN}👤 Starting User 1: Alice${NC}"
+echo -e "${FLOW}👤 Starting User 1: Alice${NC}"
 echo "   Database: $DEMO_DIR/auradev_alice.db"
 export DB_DIR="$DEMO_DIR"
 export USER_ID="alice"
@@ -52,7 +52,7 @@ echo ""
 sleep 2
 
 # User 2: Bob
-echo -e "${BLUE}👤 Starting User 2: Bob${NC}"
+echo -e "${DEBUG}👤 Starting User 2: Bob${NC}"
 echo "   Database: $DEMO_DIR/auradev_bob.db"
 export USER_ID="bob"
 
@@ -63,7 +63,7 @@ echo "   PID: $BOB_PID"
 echo ""
 
 # Wait for both to complete
-echo -e "${YELLOW}⏳ Waiting for both sessions to complete...${NC}"
+echo -e "${ACCENT}⏳ Waiting for both sessions to complete...${NC}"
 wait $ALICE_PID
 wait $BOB_PID
 
@@ -86,8 +86,8 @@ if [ -f "$DEMO_DIR/auradev_alice.db" ] && [ -f "$DEMO_DIR/auradev_bob.db" ]; the
     ALICE_ROWS=$(sqlite3 "$DEMO_DIR/auradev_alice.db" "SELECT COUNT(*) FROM cycles;" 2>/dev/null || echo "0")
     BOB_ROWS=$(sqlite3 "$DEMO_DIR/auradev_bob.db" "SELECT COUNT(*) FROM cycles;" 2>/dev/null || echo "0")
     
-    echo -e "${GREEN}Alice's database:${NC} $ALICE_ROWS cycles recorded"
-    echo -e "${BLUE}Bob's database:${NC} $BOB_ROWS cycles recorded"
+    echo -e "${FLOW}Alice's database:${NC} $ALICE_ROWS cycles recorded"
+    echo -e "${DEBUG}Bob's database:${NC} $BOB_ROWS cycles recorded"
     echo ""
     
     if [ "$ALICE_ROWS" -gt 0 ] && [ "$BOB_ROWS" -gt 0 ]; then

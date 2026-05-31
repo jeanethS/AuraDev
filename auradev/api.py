@@ -13,7 +13,8 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from database import get_all_sessions, get_session_cycles, get_insights, get_habits, init_db, save_cycle
-from config import API_PORT
+from config import API_PORT, CORS_ORIGINS
+from rate_limiter import rate_limit_middleware
 
 
 def get_current_user(x_user_id: Optional[str] = Header(None)) -> str:
@@ -54,11 +55,14 @@ app = FastAPI(title="AURADEV API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "X-User-Id"],
 )
+
+# Register rate limiting middleware for production protection
+app.middleware("http")(rate_limit_middleware)
 
 
 @app.get("/api/health")
@@ -108,6 +112,28 @@ def habits(user_id: str = Header(None, alias="X-User-Id")):
     """Cross-session behavioral patterns for the authenticated user."""
     current_user = get_current_user(user_id)
     return get_habits(current_user)
+
+
+@app.get("/.well-known/appspecific/com.chrome.devtools.json")
+def chrome_devtools_json():
+    """Support Chrome DevTools Automatic Workspace Folders feature.
+    
+    This endpoint helps DevTools map source files on localhost to the local project root.
+    """
+    import uuid
+    # Project root is the parent directory of the auradev folder
+    project_root = str(Path(__file__).resolve().parent.parent)
+    
+    # Use a stable UUID based on the project path so it doesn't change every request
+    namespace = uuid.UUID('8c160533-6c70-4e3a-96e0-9e2365a6f2b7')
+    stable_uuid = str(uuid.uuid5(namespace, project_root))
+    
+    return {
+        "workspace": {
+            "root": project_root,
+            "uuid": stable_uuid
+        }
+    }
 
 
 # --- Sync endpoint for local app to push data to cloud ---

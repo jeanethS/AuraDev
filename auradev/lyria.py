@@ -366,25 +366,32 @@ def play_state(state: str) -> None:
         _last_state = state
         return
 
+    tmp_path: Optional[str] = None
     try:
         with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
             tmp.write(wav_bytes)
             tmp_path = tmp.name
 
-        if _last_temp_path is not None:
-            try:
-                os.remove(_last_temp_path)
-            except OSError:
-                pass
-        _last_temp_path = tmp_path
-
         if pygame is not None and pygame.mixer.get_init():
             pygame.mixer.music.load(tmp_path)
             pygame.mixer.music.play(-1)
 
+        previous_temp_path = _last_temp_path
+        _last_temp_path = tmp_path
+        if previous_temp_path is not None:
+            try:
+                os.remove(previous_temp_path)
+            except OSError:
+                pass
+
         _last_state = state
     except Exception:
         logger.exception("Failed to play Lyria audio")
+        if tmp_path is not None:
+            try:
+                os.remove(tmp_path)
+            except OSError:
+                pass
         if pygame is not None and pygame.mixer.get_init():
             pygame.mixer.music.stop()
         _last_state = state
@@ -400,9 +407,16 @@ def stop() -> None:
 
 def cleanup() -> None:
     """Alias for stop() to match AudioEngine interface."""
+    global _last_temp_path
     if _fallback_engine is not None and hasattr(_fallback_engine, "cleanup"):
         _fallback_engine.cleanup()
     stop()
+    if _last_temp_path is not None:
+        try:
+            os.remove(_last_temp_path)
+        except OSError:
+            pass
+        _last_temp_path = None
 
 
 def prefetch_next(state: str) -> None:

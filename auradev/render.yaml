@@ -1,18 +1,22 @@
 services:
   - type: web
-    name: auradev-api
-    runtime: python
-    rootDir: auradev
+    name: auradev
+    env: python
+    plan: free
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn api:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
-        value: "3.13.0"
+        value: 3.13.0
+      - key: DB_MODE
+        value: shared
+      - key: DB_DIR
+        value: /opt/render/project/data
       - key: ANTHROPIC_API_KEY
         sync: false
-      - key: DB_DIR
-        value: /data
+      - key: CORS_ORIGINS
+        value: "https://auradev-y1bp.onrender.com,http://localhost:8765"
     disk:
-      name: auradev-db
-      mountPath: /data
+      name: auradev-data
+      mountPath: /opt/render/project/data
       sizeGB: 1

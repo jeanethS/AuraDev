@@ -94,3 +94,13 @@ def test_habits(auradev_app):
     assert isinstance(data["flow_by_day"], dict)
     assert isinstance(data["flow_by_hour"], dict)
     assert isinstance(data["window_correlations"], list)
+
+
+def test_chrome_devtools_json(auradev_app):
+    data = fetch("/.well-known/appspecific/com.chrome.devtools.json")
+    assert "workspace" in data
+    assert "root" in data["workspace"]
+    assert "uuid" in data["workspace"]
+    assert isinstance(data["workspace"]["root"], str)
+    assert isinstance(data["workspace"]["uuid"], str)
+
