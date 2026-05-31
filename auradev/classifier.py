@@ -26,7 +26,8 @@ class CognitiveClassifier:
         self._last_fingerprint: Optional[Tuple] = None
         self._last_result: Optional[Dict[str, Any]] = None
 
-        logging.basicConfig(level=logging.INFO)
+        logging.getLogger("httpx").setLevel(logging.WARNING)
+        logging.getLogger("httpcore").setLevel(logging.WARNING)
         self.logger = logging.getLogger(__name__)
         
         self.system_prompt = """You are analyzing developer behavioral telemetry to classify cognitive state.

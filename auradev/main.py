@@ -10,6 +10,8 @@ Usage:
 """
 
 import argparse
+import getpass
+import os
 import signal
 import sys
 import threading
@@ -21,7 +23,7 @@ from collector import TelemetryCollector
 from classifier import CognitiveClassifier
 import lyria
 from logger import SessionLogger
-from database import init_db
+from database import init_db, get_db_path
 from config import SAMPLE_INTERVAL, STATES, API_PORT, LYRIA_PROJECT_ID
 
 try:
@@ -58,14 +60,30 @@ class auradev:
         else:
             self.max_cycles = 3 if demo_mode else None
 
+        # Detect user_id from USER_ID env or system username
+        self.user_id = os.getenv("USER_ID")
+        if self.user_id is None:
+            try:
+                self.user_id = getpass.getuser()
+            except Exception:
+                self.user_id = "default"
+
         # Session identity and persistence
         self.session_id = str(uuid.uuid4())
-        init_db()
+        init_db(self.user_id)
+        
+        # Get and display database path
+        self.db_path = get_db_path(self.user_id)
+        print(f"User: {self.user_id}")
+        print(f"Database: {self.db_path}")
 
         # Initialize components (allow injection for testing)
         self.collector = collector if collector is not None else TelemetryCollector()
         self.audio_engine = audio_engine if audio_engine is not None else None
-        self.logger = logger if logger is not None else SessionLogger(session_id=self.session_id)
+        self.logger = logger if logger is not None else SessionLogger(
+            session_id=self.session_id, 
+            user_id=self.user_id
+        )
 
         # Initialize Lyria when no audio engine is injected
         if self.audio_engine is None:
@@ -112,7 +130,6 @@ class auradev:
 
         print("auradev starting...")
         print("Press Ctrl+C to stop")
-        print("-" * 50)
 
         # Start telemetry collection
         if not self.demo_mode:

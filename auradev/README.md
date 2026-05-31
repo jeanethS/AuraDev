@@ -173,10 +173,72 @@ auradev creates detailed session logs including:
 - Final session summary with state percentages
 - Detection of longest continuous flow windows
 
-## Environment Variables
+## 🗄️ Data Storage
+
+auradev supports two multi-tenant database modes for flexible deployment:
+
+### Isolated Mode (Default)
+Each user gets their own separate SQLite database file. Best for desktop apps and maximum privacy.
 
 ```bash
-ANTHROPIC_API_KEY=your_claude_api_key_here
+# Default mode - no configuration needed
+python main.py
+```
+
+Database location: `~/.auradev/auradev_{hash}.db` where `{hash}` is derived from your user ID.
+
+### Shared Mode
+All users share a single database with automatic user filtering. Best for cloud deployments and centralized management.
+
+```bash
+export DB_MODE=shared
+python main.py
+```
+
+Database location: `~/.auradev/auradev.db`
+
+### Usage Examples
+
+**Single user (default):**
+```bash
+# No configuration needed - works out of the box
+python main.py
+```
+
+**Multi-user same machine:**
+```bash
+# User 1
+export USER_ID=alice
+python main.py
+
+# User 2 (in different terminal)
+export USER_ID=bob
+python main.py
+```
+
+**Cloud deployment:**
+```bash
+# Set shared mode for multi-tenant server
+export DB_MODE=shared
+export DB_DIR=/var/auradev/data
+uvicorn api:app --host 0.0.0.0 --port 8765
+```
+
+## Environment Variables
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `ANTHROPIC_API_KEY` | Yes* | - | Your Claude API key (*not required in --demo mode) |
+| `DB_MODE` | No | `isolated` | Database mode: `isolated` or `shared` |
+| `DB_DIR` | No | `~/.auradev` | Custom database directory path |
+| `USER_ID` | No | system username | Override user identifier |
+| `API_PORT` | No | `8765` | Port for web dashboard API |
+
+**Example .env file:**
+```bash
+ANTHROPIC_API_KEY=sk-ant-api03-...
+DB_MODE=isolated
+USER_ID=developer1
 ```
 
 ## Demo Script
@@ -189,15 +251,53 @@ ANTHROPIC_API_KEY=your_claude_api_key_here
 
 ## Troubleshooting
 
+### Audio & Input Issues
+
 **Input monitoring fails**: Grant accessibility permissions on macOS or run with appropriate privileges on Linux.
 
 **pygetwindow errors**: Window tracking may fail on some systems - this is handled gracefully with fallbacks.
 
 **Audio clicks/pops**: Ensure no other applications are competing for audio resources.
 
+**No audio (Python 3.14+)**: pygame/numpy may not be available. Use Python 3.13 or earlier, or create a venv with the included `.venv`.
+
+### API & Authentication Issues
+
 **API errors**: Check your `ANTHROPIC_API_KEY` or use `--demo` mode for offline operation.
 
-**No audio (Python 3.14+)**: pygame/numpy may not be available. Use Python 3.13 or earlier, or create a venv with the included `.venv`.
+**Dashboard shows "Connecting" forever**: 
+- Check API server is running: `uvicorn api:app --reload`
+- Verify port 8765 is accessible: `curl http://localhost:8765/api/health`
+- Check browser console for CORS or network errors
+
+**401 Unauthorized / User not found**: Set `USER_ID` environment variable or include `X-User-Id` header in API requests.
+
+### Database & Multi-User Issues
+
+**"No such column: user_id" error**: 
+- Your database needs migration
+- See docs/multi-tenant-database.md for migration instructions
+- Or delete `~/.auradev/*.db` to start fresh
+
+**Users seeing each other's data**:
+- Verify `DB_MODE=shared` is set in your environment
+- Check that API calls include the `X-User-Id` header
+- Run integration tests: `python test_multiuser.py`
+
+**Database file not found**:
+- Check `DB_DIR` environment variable is set correctly
+- Ensure the directory exists and has write permissions
+- Default location is `~/.auradev/`
+
+**Different data in dashboard vs main app**:
+- Both should use same `DB_MODE` and `USER_ID`
+- Check environment variables are set consistently
+- In isolated mode, each user_id creates a separate database file
+
+For complete multi-tenant documentation, see:
+- `docs/multi-tenant-database.md` - Architecture details
+- `docs/multi-tenant-quick-reference.md` - Quick start guide
+- `DEPLOYMENT.md` - Cloud hosting instructions
 
 ## Architecture
 

@@ -177,6 +177,17 @@
         <span id="sidebar-dot" class="w-2 h-2 bg-outline rounded-full" aria-hidden="true"></span>
         <span id="sidebar-status">Connecting to API</span>
       </div>
+      <div class="mt-4 flex flex-col gap-2">
+        <label for="user-id-input" class="font-label-caps text-[10px] text-on-surface-variant">USER ID</label>
+        <input 
+          type="text" 
+          id="user-id-input" 
+          class="bg-surface-container text-on-surface font-code-sm text-xs px-2 py-1 brutalist-border rounded-DEFAULT focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" 
+          placeholder="Enter user ID"
+          value=""
+        />
+        <div id="current-user-display" class="font-code-sm text-[10px] text-primary tabular-nums"></div>
+      </div>
     </div>
     <nav class="flex flex-col gap-unit flex-1" aria-label="Dashboard sections">
       <a class="nav-active font-label-caps text-label-caps flex items-center gap-unit p-unit rounded-DEFAULT transition-transform hover:translate-x-1 duration-75" href="#focus" data-nav="focus">
@@ -440,14 +451,80 @@
     let allSessions = [];
     let pixelEngine = null;
     let pollTimer = null;
+    let currentUserId = null;
 
     function $(id) { return document.getElementById(id); }
 
+    // Multi-user support: Get current user ID from localStorage or input
+    function getCurrentUserId() {
+      if (currentUserId) return currentUserId;
+      const stored = localStorage.getItem('auradev_user_id');
+      if (stored) {
+        currentUserId = stored;
+        return stored;
+      }
+      return null; // Will fallback to system user on server
+    }
+
+    function setCurrentUserId(userId) {
+      currentUserId = userId;
+      if (userId) {
+        localStorage.setItem('auradev_user_id', userId);
+      } else {
+        localStorage.removeItem('auradev_user_id');
+      }
+      updateUserDisplay();
+    }
+
+    function updateUserDisplay() {
+      const display = $("current-user-display");
+      const input = $("user-id-input");
+      const userId = getCurrentUserId();
+      
+      if (userId) {
+        display.textContent = `Active: ${userId}`;
+        if (input && input.value !== userId) {
+          input.value = userId;
+        }
+      } else {
+        display.textContent = "Using system user";
+      }
+    }
+
+    // Updated apiFetch to include X-User-Id header
     async function apiFetch(path) {
-      const res = await fetch(`${API_BASE}${path}`, { headers: { Accept: "application/json" } });
+      const headers = { Accept: "application/json" };
+      const userId = getCurrentUserId();
+      if (userId) {
+        headers["X-User-Id"] = userId;
+      }
+      
+      const res = await fetch(`${API_BASE}${path}`, { headers });
       if (!res.ok) throw new Error(`${path} returned ${res.status}`);
       return res.json();
     }
+
+    /*
+    Example curl commands for testing multi-user API:
+
+    # Get sessions for user "alice"
+    curl -H "X-User-Id: alice" http://localhost:8765/api/sessions
+
+    # Get sessions for user "bob"
+    curl -H "X-User-Id: bob" http://localhost:8765/api/sessions
+
+    # Get insights for specific user
+    curl -H "X-User-Id: alice" http://localhost:8765/api/insights
+
+    # Sync cycle data for user
+    curl -X POST http://localhost:8765/api/sync \
+      -H "Content-Type: application/json" \
+      -H "X-User-Id: alice" \
+      -d '{"session_id":"test_session","state":"flow","confidence":0.9,"reason":"Testing","wpm":50.0,"backspace_ratio":0.1,"window_switches":2,"mouse_distance":100.0,"cpu_percent":20.0,"idle_seconds":0.0,"active_window":"VSCode"}'
+
+    # Health check (no auth needed)
+    curl http://localhost:8765/api/health
+    */
 
     function parseBreakdown(raw) {
       if (!raw) return {};
@@ -1175,6 +1252,29 @@
 
     function initDashboard() {
       try {
+        // Initialize user ID from localStorage
+        updateUserDisplay();
+        
+        // Setup user ID input handler
+        const userInput = $("user-id-input");
+        if (userInput) {
+          userInput.addEventListener("change", (e) => {
+            const newUserId = e.target.value.trim();
+            setCurrentUserId(newUserId || null);
+            // Refresh data for new user
+            refreshAll();
+          });
+          
+          // Also update on blur
+          userInput.addEventListener("blur", (e) => {
+            const newUserId = e.target.value.trim();
+            if (newUserId !== getCurrentUserId()) {
+              setCurrentUserId(newUserId || null);
+              refreshAll();
+            }
+          });
+        }
+        
         renderLegend();
         pixelEngine = new PixelCanvas($("pixel-canvas"));
         pixelEngine.resize();

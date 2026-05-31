@@ -5,6 +5,7 @@ Handles terminal output with ANSI colors, ASCII visuals, and file logging.
 Tracks session statistics and generates final summaries.
 """
 
+import getpass
 import math
 import os
 import random
@@ -29,8 +30,19 @@ if hasattr(sys.stderr, "reconfigure"):
 
 
 class SessionLogger:
-    def __init__(self, session_id: str = None):
+    def __init__(self, session_id: str = None, user_id: str = None):
         self.session_id = session_id if session_id is not None else str(uuid.uuid4())
+        
+        # Auto-detect user_id from USER_ID env or system username
+        if user_id is None:
+            user_id = os.getenv("USER_ID")
+            if user_id is None:
+                try:
+                    user_id = getpass.getuser()
+                except Exception:
+                    user_id = "default"
+        
+        self.user_id = user_id
         self.session_entries: List[Dict[str, Any]] = []
         self.session_start_time = time.time()
 
@@ -70,9 +82,9 @@ class SessionLogger:
             f"\n"
             f"{self.bold}╔══════════════════════════════════════════════════════════╗{self.reset_color}\n"
             f"{self.bold}║{self.reset_color}                                                          {self.bold}║{self.reset_color}\n"
-            f"{self.bold}║{self.reset_color}        ♪    ∿  A U R A D E V  ∿    ♪                       {self.bold}║{self.reset_color}\n"
+            f"{self.bold}║{self.reset_color}      ♪    ∿  A U R A D E V  ∿    ♪                       {self.bold}║{self.reset_color}\n"
             f"{self.bold}║{self.reset_color}                                                          {self.bold}║{self.reset_color}\n"
-            f"{self.bold}║{self.reset_color}        Ambient Music Engine for Developers                 {self.bold}║{self.reset_color}\n"
+            f"{self.bold}║{self.reset_color}      Ambient Music Engine for Developers                 {self.bold}║{self.reset_color}\n"
             f"{self.bold}║{self.reset_color}                                                          {self.bold}║{self.reset_color}\n"
             f"{self.bold}╚══════════════════════════════════════════════════════════╝{self.reset_color}\n"
         )
@@ -167,7 +179,7 @@ class SessionLogger:
 
         # Persist to SQLite
         try:
-            save_cycle(self.session_id, metrics, classification)
+            save_cycle(self.session_id, metrics, classification, self.user_id)
         except Exception as e:
             print(f"Warning: failed to save cycle to DB: {e}", file=sys.stderr)
 
