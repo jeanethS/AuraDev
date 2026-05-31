@@ -8,6 +8,14 @@ AuraDev samples your coding behavior every 30 seconds, uses Claude AI to classif
 
 Hacker: [Jeaneth Sarahi Hernandez Rios](https://github.com/jeanethS) ([@cosmicctxt](https://x.com/cosmicctxt))
 
+### Terminal dashboard
+
+![AuraDev terminal dashboard](../terminal.png)
+
+### Web dashboard
+
+![AuraDev web dashboard](DashboardExample.png)
+
 ---
 
 ## 🎵 Features

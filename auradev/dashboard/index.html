@@ -397,6 +397,14 @@
           </div>
           <div class="bg-surface p-gutter brutalist-border brutalist-shadow-primary rounded-lg flex flex-col">
             <h3 class="font-label-caps text-label-caps text-primary border-b-2 border-primary-container pb-2 mb-4">Most flow-inducing windows</h3>
+            <div id="window-correlations-notice" class="hidden mb-4 p-3 bg-secondary-fixed brutalist-border rounded">
+              <div class="font-label-caps text-xs text-primary mb-1">ℹ️ Viewing server data</div>
+              <div class="font-code-sm text-xs text-on-surface-variant">
+                You're seeing data from the API server user. To track your own activity:
+                <br>• Run <code class="bg-surface px-1 py-0.5 rounded text-primary">python auradev/main.py</code> on your machine
+                <br>• Or enter a custom user ID in the sidebar
+              </div>
+            </div>
             <div id="window-correlations" class="flex flex-col gap-3"></div>
           </div>
         </div>
@@ -875,10 +883,19 @@
 
       const winContainer = $("window-correlations");
       const wins = data.window_correlations || [];
+      
+      // Show notice if viewing server data (no custom user ID set)
+      const userId = getCurrentUserId();
+      const notice = $("window-correlations-notice");
+      if (notice) {
+        notice.classList.toggle("hidden", !!userId || wins.length === 0);
+      }
+      
       if (!wins.length) {
         winContainer.innerHTML = `<p class="font-code-sm text-sm text-on-surface-variant">Need at least 3 cycles per window to show correlations.</p>`;
         return;
       }
+      
       winContainer.innerHTML = wins.slice(0, 6).map((w, i) => {
         const bg = ["bg-surface-variant", "bg-surface-container-high", "bg-surface-container-low"][i % 3];
         const shortName = w.window.length > 28 ? w.window.slice(0, 26) + "…" : w.window;

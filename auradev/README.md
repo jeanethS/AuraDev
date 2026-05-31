@@ -12,6 +12,20 @@ Ambient music engine that samples developer behavioral telemetry every 30 second
 - **Visual Dashboard**: ASCII art logo, state icons, waveform visualizer, and metrics display
 - **Demo Mode**: Works offline for demonstrations and testing
 
+## Screenshots
+
+### Terminal dashboard
+
+Live ASCII dashboard in the terminal while auradev runs — state classification, explanation, and telemetry metrics update every sample interval.
+
+![auradev terminal dashboard](../terminal.png)
+
+### Web dashboard
+
+Browser-based session view at `http://localhost:8765` — focus state, session visualizer, and flow rate over time.
+
+![auradev web dashboard](../DashboardExample.png)
+
 ## Cognitive States
 
 auradev recognizes five distinct developer cognitive states, each with its own sound and rhythm:
